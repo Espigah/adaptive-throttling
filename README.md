@@ -1,6 +1,6 @@
 # adaptive-throttling
 
-Adaptive throttling based on the sre-book + rafaelcapucho
+Is a library that implements adaptive throttling. It is based on the sre-book + rafaelcapucho.
 
 # Client-Side Throttling
 
@@ -15,10 +15,6 @@ The number of requests attempted by the application layer(at the client, on top 
 accepts
 The number of requests accepted by the backend
 Under normal conditions, the two values are equal. As the backend starts rejecting traffic, the number of accepts becomes smaller than the number of requests. Clients can continue to issue requests to the backend until requests is K times as large as accepts. Once that cutoff is reached, the client begins to self-regulate and new requests are rejected locally (i.e., at the client) with the probability calculated in Client request rejection probability.
-
-# Adaptive throttling
-
-Is a library that implements adaptive throttling. It is based on the sre-book + rafaelcapucho.
 
 # Client request rejection probability
 
