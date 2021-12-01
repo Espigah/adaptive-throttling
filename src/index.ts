@@ -53,9 +53,9 @@ function createAdaptiveThrottlingHistory(
  * @returns
  */
 export const createAdaptiveThrottling = (
-  historyTime: number = 2,
-  timesAsLargeAsAccepts: number = 2,
-  chanceOfRejectingNewRequesLimit: number = 0.9,
+  historyTime = 2,
+  timesAsLargeAsAccepts = 2,
+  chanceOfRejectingNewRequesLimit = 0.9,
 ) => {
   const adaptiveThrottling = createAdaptiveThrottlingHistory(
     historyTime,
