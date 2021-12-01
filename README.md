@@ -1,4 +1,4 @@
-# adaptive-throttling
+# Adaptive throttling
 
 Is a library that implements adaptive throttling. It is based on the sre-book + rafaelcapucho.
 
