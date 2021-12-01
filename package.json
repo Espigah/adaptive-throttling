@@ -1,0 +1,49 @@
+{
+  "name": "adaptive-throttling",
+  "version": "1.0.0",
+  "description": "Adaptive throttling based on the sre-book + rafaelcapucho",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "jest --config jestconfig.json",
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "prepare": "npm run build",
+  "prepublishOnly": "npm test && npm run lint",
+  "preversion": "npm run lint",
+  "author": "espigah",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Espigah/adaptive-throttling"
+  },
+  "keywords": [
+    "throttling",
+    "sre"
+  ],
+  "bugs": {
+    "url": "https://github.com/Espigah/adaptive-throttling/issues"
+  },
+  "homepage": "https://github.com/Espigah/adaptive-throttling#readme",
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.4",
+    "@types/jest": "^27.0.3",
+    "jest": "^27.3.1",
+    "prettier": "^2.5.0",
+    "ts-jest": "^27.0.7",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.5.2"
+  },
+  "files": [
+    "lib/**/*"
+  ]
+}
