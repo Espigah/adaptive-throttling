@@ -1,5 +1,4 @@
-//const { createAdaptiveThrottling } = require('adaptive-throttling');
-const { createAdaptiveThrottling } = require('../lib/index.js');
+const { createAdaptiveThrottling } = require('adaptive-throttling');
 const axios = require('axios');
 
 const adaptiveThrottling = createAdaptiveThrottling();

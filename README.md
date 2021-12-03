@@ -14,7 +14,7 @@ Is a library that implements adaptive throttling. It is based on the sre-book + 
 # Examples
 
 ```javascript
-const { createAdaptiveThrottling } = require('../lib/index.js');
+const { createAdaptiveThrottling } = require('adaptive-throttling');
 const axios = require('axios');
 
 const adaptiveThrottling = createAdaptiveThrottling();
