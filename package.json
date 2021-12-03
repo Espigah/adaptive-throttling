@@ -1,6 +1,6 @@
 {
   "name": "adaptive-throttling",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adaptive throttling based on the sre-book + rafaelcapucho",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
