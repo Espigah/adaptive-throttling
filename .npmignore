@@ -1,6 +1,6 @@
 .gitignore
 .history
-
+example
 node_modules/
 # Ignore files with sensitive environment variables
 .env
