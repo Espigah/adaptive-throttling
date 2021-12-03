@@ -1,43 +1,41 @@
 function createAdaptiveThrottlingHistory(
-  historyTime = 2,
+  historyTimeMinute = 2,
   timesAsLargeAsAccepts = 2,
-  chanceOfRejectingNewRequesLimit = 0.9,
+  upperLimiteToChanceOfRejectingNewRequest = 0.9,
 ) {
-  let requestsHistory: Date[] = [];
-  let acceptsHistory: Date[] = [];
+  let requestsHistory: number[] = [];
+  let acceptsHistory: number[] = [];
   let cutoffIsReached: boolean;
-  const checkDate = (historyTime: number) => {
-    const currentDate = new Date();
-    return new Date(currentDate.getTime() - historyTime * 60000);
+
+  const checkDate = (historyTime: number): number => {
+    return Date.now() - historyTime * 60000;
   };
 
-  const filterHistory = (value: Date) => {
-    const date = checkDate(historyTime);
+  const filterOldestHistory = (value: number): boolean => {
+    const date = checkDate(historyTimeMinute);
     return value > date;
   };
 
   return {
     addRequests() {
-      requestsHistory.push(new Date(Date.now()));
+      requestsHistory.push(Date.now());
       return this;
     },
     addAccepts() {
-      acceptsHistory.push(new Date(Date.now()));
+      acceptsHistory.push(Date.now());
       return this;
     },
     refresh() {
-      requestsHistory = requestsHistory.filter(filterHistory);
-      acceptsHistory = acceptsHistory.filter(filterHistory);
+      requestsHistory = requestsHistory.filter(filterOldestHistory);
+      acceptsHistory = acceptsHistory.filter(filterOldestHistory);
 
       const requests = requestsHistory.length;
       const accepts = acceptsHistory.length;
 
       const p0 = Math.max(0, (requests - timesAsLargeAsAccepts * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
-      const p1 = Math.min(p0, chanceOfRejectingNewRequesLimit); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
+      const p1 = Math.min(p0, upperLimiteToChanceOfRejectingNewRequest); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
 
-      //    console.log(p0, p1, cutoffIsReached, requests, accepts);
-
-      return (cutoffIsReached = p1 >= chanceOfRejectingNewRequesLimit);
+      return (cutoffIsReached = p1 >= upperLimiteToChanceOfRejectingNewRequest);
     },
     getCutoffIsReached() {
       return cutoffIsReached;
@@ -47,20 +45,20 @@ function createAdaptiveThrottlingHistory(
 
 /**
  *
- * @param {Number} historyTime - Each client task keeps the following information for the last N minutes of its history:
- * @param {Number} timesAsLargeAsAccepts - Clients can continue to issue requests to the backend until requests is K times as large as accepts
- * @param {Number} chanceOfRejectingNewRequesLimit - Allowing the client to recover even in that worst scenario, when the service is down more than (historyTime) minutes.
+ * @param {Number} historyTime - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+ * @param {Number} timesAsLargeAsAccepts - Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
+ * @param {Number} upperLimiteToChanceOfRejectingNewRequest - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
  * @returns
  */
 export const createAdaptiveThrottling = (
   historyTime = 2,
   timesAsLargeAsAccepts = 2,
-  chanceOfRejectingNewRequesLimit = 0.9,
+  upperLimiteToChanceOfRejectingNewRequest = 0.9,
 ) => {
   const adaptiveThrottling = createAdaptiveThrottlingHistory(
     historyTime,
     timesAsLargeAsAccepts,
-    chanceOfRejectingNewRequesLimit,
+    upperLimiteToChanceOfRejectingNewRequest,
   );
 
   return {
@@ -68,12 +66,13 @@ export const createAdaptiveThrottling = (
       return adaptiveThrottling.getCutoffIsReached();
     },
     async execute(func: any) {
-      adaptiveThrottling.addRequests();
-
       if (adaptiveThrottling.getCutoffIsReached()) {
-        adaptiveThrottling.addAccepts().refresh();
+        adaptiveThrottling.refresh();
         throw new Error('Out of quota');
       }
+
+      adaptiveThrottling.addRequests();
+
       try {
         const result: any = await func();
         adaptiveThrottling.addAccepts().refresh();

@@ -2,6 +2,55 @@
 
 Is a library that implements adaptive throttling. It is based on the sre-book + rafaelcapucho.
 
+# Installation
+
+    npm install --save adaptive-throttling
+
+# Docs
+
+- https://sre.google/sre-book/handling-overload/
+- https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
+
+# Examples
+
+```javascript
+const { createAdaptiveThrottling } = require('../lib/index.js');
+const axios = require('axios');
+
+const adaptiveThrottling = createAdaptiveThrottling();
+
+adaptiveThrottling
+  .execute(() => {
+    return axios.get('/user?ID=12345');
+  })
+  .then((response) => {
+    console.log('success', response.data);
+  })
+  .catch((error) => {
+    console.log('error', error.message);
+  });
+```
+
+# Prameters
+
+### historyTime
+
+Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+
+### timesAsLargeAsAccepts {K}
+
+Clients can continue to issue requests to the backend until requests is K times as large as accepts. Google services and they suggest timesAsLargeAsAccepts = 2
+
+Indicates how many minimum failures will be needed to start counting
+
+### upperLimiteToChanceOfRejectingNewRequest
+
+if the server goes down for more than {historyTime} minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won1t be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than {historyTime} minutes.
+
+# "Benchmark"
+
+![benchmark](docs/Benchmark.png)
+
 # Client-Side Throttling
 
 When a customer is out of quota, a backend task should reject requests quickly with the expectation that returning a "customer is out of quota" error consumes significantly fewer resources than actually processing the request and serving back a correct response. However, this logic doesn't hold true for all services. For example, it's almost equally expensive to reject a request that requires a simple RAM lookup (where the overhead of the request/response protocol handling is significantly larger than the overhead of producing the response) as it is to accept and run that request. And even in the case where rejecting requests saves significant resources, those requests still consume some resources. If the amount of rejected requests is significant, these numbers add up quickly. In such cases, the backend can become overloaded even though the vast majority of its CPU is spent just rejecting requests!
@@ -31,8 +80,3 @@ We generally prefer the 2x multiplier. By allowing more requests to reach the ba
 We've found adaptive throttling to work well in practice, leading to stable rates of requests overall. Even in large overload situations, backends end up rejecting one request for each request they actually process. One large advantage of this approach is that the decision is made by the client task based entirely on local information and using a relatively simple implementation: there are no additional dependencies or latency penalties.
 
 One additional consideration is that client-side throttling may not work well with clients that only very sporadically send requests to their backends. In this case, the view that each client has of the state of the backend is reduced drastically, and approaches to increment this visibility tend to be expensive.
-
-# References
-
-- https://sre.google/sre-book/handling-overload/
-- https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
