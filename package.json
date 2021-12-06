@@ -1,12 +1,14 @@
 {
   "name": "adaptive-throttling",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Adaptive throttling based on the sre-book + rafaelcapucho",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
   "scripts": {
+    "tsdx": "node_modules/.bin/tsdx",
     "test": "jest --config jestconfig.json",
-    "build": "tsc",
+    "build": "tsdx build",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
@@ -15,6 +17,16 @@
     "postversion": "git push && git push --tags",
     "lint": "eslint -c .eslintrc --ext .ts src/**/*.ts"
   },
+  "size-limit": [
+    {
+      "path": "dist/adaptive-throttling.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/adaptive-throttling.esm.js",
+      "limit": "10 KB"
+    }
+  ],
   "prepare": "npm run build",
   "prepublishOnly": "npm test && npm run lint",
   "preversion": "npm run lint",
@@ -25,8 +37,11 @@
     "url": "https://github.com/Espigah/adaptive-throttling"
   },
   "keywords": [
+    "fetch",
     "throttling",
-    "sre"
+    "resiliency",
+    "sre",
+    "scaling"
   ],
   "bugs": {
     "url": "https://github.com/Espigah/adaptive-throttling/issues"
@@ -38,13 +53,17 @@
     "@types/jest": "^27.0.3",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
-    "eslint": "^8.3.0",
-    "jest": "^27.4.2",
-    "prettier": "^2.5.0",
-    "ts-jest": "^27.0.7",
+    "eslint": "^8.4.0",
+    "jest": "^27.4.3",
+    "prettier": "^2.5.1",
+    "ts-jest": "^27.1.0",
     "typescript": "^4.5.2"
   },
   "files": [
-    "lib/**/*"
-  ]
+    "dist"
+  ],
+  "dependencies": {
+    "size-limit": "^7.0.3",
+    "tsdx": "^0.14.1"
+  }
 }

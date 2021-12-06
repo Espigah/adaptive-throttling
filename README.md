@@ -2,16 +2,37 @@
 
 Is a library that implements adaptive throttling. It is based on the sre-book + rafaelcapucho.
 
-# Installation
+## Installation
 
-    npm install --save adaptive-throttling
+```bash
+npm i adaptive-throttling -S
+```
 
-# Docs
+or
+
+```bash
+yarn add adaptive-throttling
+```
+
+import { createAdaptiveThrottling } from 'adaptive-throttling';
+const { createAdaptiveThrottling } = require('adaptive-throttling');
+
+## Docs
 
 - https://sre.google/sre-book/handling-overload/
 - https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
 
-# Examples
+## Usage
+
+### Import
+
+```javascript
+import { createAdaptiveThrottling } from 'adaptive-throttling';
+// or
+const { createAdaptiveThrottling } = require('adaptive-throttling');
+```
+
+### Example
 
 ```javascript
 const { createAdaptiveThrottling } = require('adaptive-throttling');
@@ -80,3 +101,21 @@ We generally prefer the 2x multiplier. By allowing more requests to reach the ba
 We've found adaptive throttling to work well in practice, leading to stable rates of requests overall. Even in large overload situations, backends end up rejecting one request for each request they actually process. One large advantage of this approach is that the decision is made by the client task based entirely on local information and using a relatively simple implementation: there are no additional dependencies or latency penalties.
 
 One additional consideration is that client-side throttling may not work well with clients that only very sporadically send requests to their backends. In this case, the view that each client has of the state of the backend is reduced drastically, and approaches to increment this visibility tend to be expensive.
+
+# Roadmap
+
+## 1.x.x
+
+- [x] Add support for rejection based on `(requests - K * accepts) / (requests + 1)`
+- [x] Add support for cjs and esm
+
+## 2.x.x
+
+- [] Add support for optional params with Spread Operator
+- [] Add support for use `new AdaptiveThrottling()`
+- [] `createAdaptiveThrottling` deprecated
+
+## 3.x.x
+
+- [] Add support for client request rejection probability
+- [] `createAdaptiveThrottling` removed

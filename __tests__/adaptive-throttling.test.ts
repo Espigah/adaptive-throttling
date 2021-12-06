@@ -1,13 +1,13 @@
 import { createAdaptiveThrottling } from '../src/index';
 
 const exception = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise(() => {
     throw new Error('some error');
   });
 };
 
 const success = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     setTimeout(() => {
       resolve('success');
     }, 1000);
@@ -33,7 +33,7 @@ test('Adaptive Throttling : out of quota case', async () => {
   for (let i = 0; i < 19; i++) {
     try {
       await adaptiveThrottling.execute(() => {
-        return new Promise((resolve, reject) => {
+        return new Promise((_resolve, reject) => {
           setTimeout(() => {
             reject('reject');
           }, 100);
