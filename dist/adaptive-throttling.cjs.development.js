@@ -889,10 +889,10 @@ try {
 }
 });
 
-var ThrottledEception = /*#__PURE__*/function (_Error) {
-  _inheritsLoose(ThrottledEception, _Error);
+var ThrottledException = /*#__PURE__*/function (_Error) {
+  _inheritsLoose(ThrottledException, _Error);
 
-  function ThrottledEception(message) {
+  function ThrottledException(message) {
     var _this;
 
     if (message === void 0) {
@@ -901,12 +901,12 @@ var ThrottledEception = /*#__PURE__*/function (_Error) {
 
     _this = _Error.call(this, message) || this;
     _this.message = message;
-    _this.name = 'ThrottledEception';
+    _this.name = 'ThrottledException';
     _this.stack = new Error().stack;
     return _this;
   }
 
-  return ThrottledEception;
+  return ThrottledException;
 }( /*#__PURE__*/_wrapNativeSuper(Error));
 
 // Higher value is less agressive, 2 is recommended
@@ -963,7 +963,7 @@ function createAdaptiveThrottlingHistory(historyTimeMinute) {
 }
 /**
  *
- * @param {Number} AdaptiveThrottlingOptions.historyTimeMinute - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+ * @param {Number} AdaptiveThrottlingOptions.historyTimeMinute - Each client task keeps the following information for the last N minutes of its history.
  * @param {Number} AdaptiveThrottlingOptions.k - Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
  * @param {Number} AdaptiveThrottlingOptions.upperLimiteToReject - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
  * @returns
@@ -1013,7 +1013,7 @@ var AdaptiveThrottling = function AdaptiveThrottling(_temp) {
                 }
 
                 updateRequestRejectionProbability();
-                throw new ThrottledEception();
+                throw new ThrottledException();
 
               case 4:
                 _context.prev = 4;
