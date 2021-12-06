@@ -11,7 +11,6 @@ interface AdaptiveThrottlingOptions {
  * @returns
  */
 export declare const AdaptiveThrottling: ({ historyTimeMinute, k, upperLimiteToReject, }?: AdaptiveThrottlingOptions) => {
-    getCutoffIsReached(): boolean;
     execute(func: any): Promise<any>;
 };
 /**
@@ -23,7 +22,6 @@ export declare const AdaptiveThrottling: ({ historyTimeMinute, k, upperLimiteToR
  * @deprecated prefer AdaptiveThrottling
  */
 export declare const createAdaptiveThrottling: (historyTimeMinute?: number, timesAsLargeAsAccepts?: number, upperLimiteToChanceOfRejectingNewRequest?: number) => {
-    getCutoffIsReached(): boolean;
     execute(func: any): Promise<any>;
 };
 export {};

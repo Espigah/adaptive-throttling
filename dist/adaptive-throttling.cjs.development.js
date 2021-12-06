@@ -923,22 +923,13 @@ var defaultOptions = {
   upperLimiteToReject: UPPER_LIMITE_TO_REJECT
 };
 
-function createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReject) {
+function createAdaptiveThrottlingHistory(historyTimeMinute) {
   if (historyTimeMinute === void 0) {
     historyTimeMinute = HISTORY_TIME_MINUTE;
   }
 
-  if (k === void 0) {
-    k = K;
-  }
-
-  if (upperLimiteToReject === void 0) {
-    upperLimiteToReject = UPPER_LIMITE_TO_REJECT;
-  }
-
   var requestsHistory = [];
   var acceptsHistory = [];
-  var cutoffIsReached;
 
   var checkDate = function checkDate(historyTimeMinute) {
     return Date.now() - historyTimeMinute * 60000;
@@ -961,16 +952,12 @@ function createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReje
     refresh: function refresh() {
       requestsHistory = requestsHistory.filter(filterOldestHistory);
       acceptsHistory = acceptsHistory.filter(filterOldestHistory);
-      var requests = requestsHistory.length;
-      var accepts = acceptsHistory.length;
-      var p0 = Math.max(0, (requests - k * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
-
-      var p1 = Math.min(p0, upperLimiteToReject); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
-
-      return cutoffIsReached = p1 >= upperLimiteToReject;
     },
-    getCutoffIsReached: function getCutoffIsReached() {
-      return cutoffIsReached;
+    getRequestsHistoryLength: function getRequestsHistoryLength() {
+      return requestsHistory.length;
+    },
+    getAcceptsHistoryLength: function getAcceptsHistoryLength() {
+      return acceptsHistory.length;
     }
   };
 }
@@ -992,11 +979,25 @@ var AdaptiveThrottling = function AdaptiveThrottling(_temp) {
       _ref$upperLimiteToRej = _ref.upperLimiteToReject,
       upperLimiteToReject = _ref$upperLimiteToRej === void 0 ? UPPER_LIMITE_TO_REJECT : _ref$upperLimiteToRej;
 
-  var adaptiveThrottling = createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReject);
+  var requestRejectionProbability = 0;
+  var adaptiveThrottling = createAdaptiveThrottlingHistory(historyTimeMinute);
+
+  var checkRequestRejectionProbability = function checkRequestRejectionProbability() {
+    return Math.random() < requestRejectionProbability;
+  };
+
+  var updateRequestRejectionProbability = function updateRequestRejectionProbability() {
+    adaptiveThrottling.refresh();
+    var requests = adaptiveThrottling.getRequestsHistoryLength();
+    var accepts = adaptiveThrottling.getAcceptsHistoryLength();
+    var p0 = Math.max(0, (requests - k * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
+
+    var p1 = Math.min(p0, upperLimiteToReject); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
+
+    requestRejectionProbability = p1;
+  };
+
   return {
-    getCutoffIsReached: function getCutoffIsReached() {
-      return adaptiveThrottling.getCutoffIsReached();
-    },
     execute: function execute(func) {
       return _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee() {
         var result;
@@ -1004,37 +1005,39 @@ var AdaptiveThrottling = function AdaptiveThrottling(_temp) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                if (!adaptiveThrottling.getCutoffIsReached()) {
-                  _context.next = 3;
+                adaptiveThrottling.addRequests();
+
+                if (!checkRequestRejectionProbability()) {
+                  _context.next = 4;
                   break;
                 }
 
-                adaptiveThrottling.refresh();
+                updateRequestRejectionProbability();
                 throw new ThrottledEception();
 
-              case 3:
-                adaptiveThrottling.addRequests();
+              case 4:
                 _context.prev = 4;
                 _context.next = 7;
                 return func();
 
               case 7:
                 result = _context.sent;
-                adaptiveThrottling.addAccepts().refresh();
+                adaptiveThrottling.addAccepts();
+                updateRequestRejectionProbability();
                 return _context.abrupt("return", result);
 
-              case 12:
-                _context.prev = 12;
+              case 13:
+                _context.prev = 13;
                 _context.t0 = _context["catch"](4);
-                adaptiveThrottling.refresh();
+                updateRequestRejectionProbability();
                 throw _context.t0;
 
-              case 16:
+              case 17:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee, null, [[4, 12]]);
+        }, _callee, null, [[4, 13]]);
       }))();
     }
   };

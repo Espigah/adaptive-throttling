@@ -25,14 +25,9 @@ interface AdaptiveThrottlingOptions {
   upperLimiteToReject: number;
 }
 
-function createAdaptiveThrottlingHistory(
-  historyTimeMinute = HISTORY_TIME_MINUTE,
-  k = K,
-  upperLimiteToReject = UPPER_LIMITE_TO_REJECT,
-) {
+function createAdaptiveThrottlingHistory(historyTimeMinute = HISTORY_TIME_MINUTE) {
   let requestsHistory: number[] = [];
   let acceptsHistory: number[] = [];
-  let cutoffIsReached: boolean;
 
   const checkDate = (historyTimeMinute: number): number => {
     return Date.now() - historyTimeMinute * 60000;
@@ -55,17 +50,12 @@ function createAdaptiveThrottlingHistory(
     refresh() {
       requestsHistory = requestsHistory.filter(filterOldestHistory);
       acceptsHistory = acceptsHistory.filter(filterOldestHistory);
-
-      const requests = requestsHistory.length;
-      const accepts = acceptsHistory.length;
-
-      const p0 = Math.max(0, (requests - k * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
-      const p1 = Math.min(p0, upperLimiteToReject); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
-
-      return (cutoffIsReached = p1 >= upperLimiteToReject);
     },
-    getCutoffIsReached() {
-      return cutoffIsReached;
+    getRequestsHistoryLength(): number {
+      return requestsHistory.length;
+    },
+    getAcceptsHistoryLength(): number {
+      return acceptsHistory.length;
     },
   };
 }
@@ -82,26 +72,41 @@ export const AdaptiveThrottling = ({
   k = K,
   upperLimiteToReject = UPPER_LIMITE_TO_REJECT,
 }: AdaptiveThrottlingOptions = defaultOptions) => {
-  const adaptiveThrottling = createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReject);
+  let requestRejectionProbability = 0;
+  const adaptiveThrottling = createAdaptiveThrottlingHistory(historyTimeMinute);
+
+  const checkRequestRejectionProbability = () => {
+    return Math.random() < requestRejectionProbability;
+  };
+
+  const updateRequestRejectionProbability = () => {
+    adaptiveThrottling.refresh();
+
+    const requests = adaptiveThrottling.getRequestsHistoryLength();
+    const accepts = adaptiveThrottling.getAcceptsHistoryLength();
+
+    const p0 = Math.max(0, (requests - k * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
+    const p1 = Math.min(p0, upperLimiteToReject); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
+
+    requestRejectionProbability = p1;
+  };
 
   return {
-    getCutoffIsReached() {
-      return adaptiveThrottling.getCutoffIsReached();
-    },
     async execute(func: any) {
-      if (adaptiveThrottling.getCutoffIsReached()) {
-        adaptiveThrottling.refresh();
+      adaptiveThrottling.addRequests();
+
+      if (checkRequestRejectionProbability()) {
+        updateRequestRejectionProbability();
         throw new ThrottledEception();
       }
 
-      adaptiveThrottling.addRequests();
-
       try {
         const result: any = await func();
-        adaptiveThrottling.addAccepts().refresh();
+        adaptiveThrottling.addAccepts();
+        updateRequestRejectionProbability();
         return result;
       } catch (error) {
-        adaptiveThrottling.refresh();
+        updateRequestRejectionProbability();
         throw error;
       }
     },

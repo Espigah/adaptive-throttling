@@ -114,4 +114,4 @@ One additional consideration is that client-side throttling may not work well wi
 
 ## 2.x.x
 
-- [] Add support for client request rejection probability
+- [x] Add support for client request rejection probability `Math.random() < Client request rejection probability`
