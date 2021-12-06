@@ -24,18 +24,18 @@ yarn add adaptive-throttling
 ### Import
 
 ```javascript
-import { createAdaptiveThrottling } from 'adaptive-throttling';
+import { AdaptiveThrottling } from 'adaptive-throttling';
 // or
-const { createAdaptiveThrottling } = require('adaptive-throttling');
+const { AdaptiveThrottling } = require('adaptive-throttling');
 ```
 
 ### Example
 
 ```javascript
-const { createAdaptiveThrottling } = require('adaptive-throttling');
+const { AdaptiveThrottling } = require('adaptive-throttling');
 const axios = require('axios');
 
-const adaptiveThrottling = createAdaptiveThrottling();
+const adaptiveThrottling = AdaptiveThrottling();
 
 adaptiveThrottling
   .execute(() => {
@@ -55,13 +55,13 @@ adaptiveThrottling
 
 Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
 
-### timesAsLargeAsAccepts {K}
+### k
 
-Clients can continue to issue requests to the backend until requests is K times as large as accepts. Google services and they suggest timesAsLargeAsAccepts = 2
+Clients can continue to issue requests to the backend until requests is K times as large as accepts. Google services and they suggest k = 2
 
 Indicates how many minimum failures will be needed to start counting
 
-### upperLimiteToChanceOfRejectingNewRequest
+### upperLimiteToReject
 
 if the server goes down for more than {historyTime} minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won1t be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than {historyTime} minutes.
 
@@ -106,13 +106,12 @@ One additional consideration is that client-side throttling may not work well wi
 - [x] Add support for rejection based on `(requests - K * accepts) / (requests + 1)`
 - [x] Add support for cjs and esm
 
+## 1.1.x
+
+- [x] Add support for optional params with Spread Operator
+- [x] Add support for use `AdaptiveThrottling()`
+- [x] `createAdaptiveThrottling` deprecated
+
 ## 2.x.x
 
-- [] Add support for optional params with Spread Operator
-- [] Add support for use `new AdaptiveThrottling()`
-- [] `createAdaptiveThrottling` deprecated
-
-## 3.x.x
-
 - [] Add support for client request rejection probability
-- [] `createAdaptiveThrottling` removed
