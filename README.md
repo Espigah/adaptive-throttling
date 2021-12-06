@@ -1,5 +1,7 @@
 # Adaptive throttling
 
+![npm-version](https://img.shields.io/npm/v/adaptive-throttling?style=flat-square) ![bundle-size](https://img.shields.io/bundlephobia/min/adaptive-throttling?style=flat-square) ![node-version](https://img.shields.io/node/v/adaptive-throttling?style=flat-square) ![downloads](https://img.shields.io/npm/dm/adaptive-throttling?style=flat-square)
+
 Is a library that implements adaptive throttling. It is based on the sre-book + rafaelcapucho.
 
 ## Installation
