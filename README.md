@@ -14,9 +14,6 @@ or
 yarn add adaptive-throttling
 ```
 
-import { createAdaptiveThrottling } from 'adaptive-throttling';
-const { createAdaptiveThrottling } = require('adaptive-throttling');
-
 ## Docs
 
 - https://sre.google/sre-book/handling-overload/
