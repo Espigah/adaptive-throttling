@@ -4,14 +4,14 @@ import ThrottledEception from './ThrottledEception';
 
 // Multiplier that determines aggressiveness of throttling
 // Higher value is less agressive, 2 is recommended
-const K: number = 2;
+const K = 2;
 
 // Determines how many seconds wide the requestWindow is.
 // Default is 120 seconds i.e rejection probability is based on how well the backend has been performing in the last 2 minutes
-const HISTORY_TIME_MINUTE: number = 120;
+const HISTORY_TIME_MINUTE = 120;
 
 // Determines how often requestsMap is cleaned (delete old keys), default 60 seconds
-const UPPER_LIMITE_TO_REJECT: number = 60;
+const UPPER_LIMITE_TO_REJECT = 60;
 
 const defaultOptions = {
   historyTimeMinute: HISTORY_TIME_MINUTE,
