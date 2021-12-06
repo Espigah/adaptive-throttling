@@ -1,4 +1,4 @@
-import { createAdaptiveThrottling } from '../src/index';
+import { AdaptiveThrottling } from '../src/index';
 
 const exception = () => {
   return new Promise(() => {
@@ -15,20 +15,24 @@ const success = () => {
 };
 
 test('Adaptive Throttling : success case', async () => {
-  const data = await createAdaptiveThrottling().execute(success);
+  const data = await AdaptiveThrottling().execute(success);
   expect(data).toEqual('success');
 });
 
 test('Adaptive Throttling : exception case', async () => {
   const action = async () => {
-    await createAdaptiveThrottling().execute(exception);
+    await AdaptiveThrottling().execute(exception);
   };
 
   await expect(action()).rejects.toThrow('some error');
 });
 
 test('Adaptive Throttling : out of quota case', async () => {
-  const adaptiveThrottling = createAdaptiveThrottling(0.1, 0.2, 0.8);
+  const adaptiveThrottling = AdaptiveThrottling({
+    historyTimeMinute: 0.1,
+    k: 0.2,
+    upperLimiteToReject: 0.8,
+  });
   await adaptiveThrottling.execute(success);
   for (let i = 0; i < 19; i++) {
     try {
@@ -46,7 +50,7 @@ test('Adaptive Throttling : out of quota case', async () => {
 });
 
 // test('Adaptive Throttling : out of quota case', async () => {
-//   const adaptiveThrottling = createAdaptiveThrottling({
+//   const adaptiveThrottling = AdaptiveThrottling({
 //     historyTime: 0.1,
 //     timesAsLargeAsAccepts: 0.2,
 //     chanceOfRejectingNewRequesLimit: 0.8,

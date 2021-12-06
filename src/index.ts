@@ -1,14 +1,41 @@
+/* --- */
+
+import ThrottledEception from './ThrottledEception';
+
+// Multiplier that determines aggressiveness of throttling
+// Higher value is less agressive, 2 is recommended
+const K: number = 2;
+
+// Determines how many seconds wide the requestWindow is.
+// Default is 120 seconds i.e rejection probability is based on how well the backend has been performing in the last 2 minutes
+const HISTORY_TIME_MINUTE: number = 120;
+
+// Determines how often requestsMap is cleaned (delete old keys), default 60 seconds
+const UPPER_LIMITE_TO_REJECT: number = 60;
+
+const defaultOptions = {
+  historyTimeMinute: HISTORY_TIME_MINUTE,
+  k: K,
+  upperLimiteToReject: UPPER_LIMITE_TO_REJECT,
+};
+
+interface AdaptiveThrottlingOptions {
+  historyTimeMinute: number;
+  k: number;
+  upperLimiteToReject: number;
+}
+
 function createAdaptiveThrottlingHistory(
-  historyTimeMinute = 2,
-  timesAsLargeAsAccepts = 2,
-  upperLimiteToChanceOfRejectingNewRequest = 0.9,
+  historyTimeMinute = HISTORY_TIME_MINUTE,
+  k = K,
+  upperLimiteToReject = UPPER_LIMITE_TO_REJECT,
 ) {
   let requestsHistory: number[] = [];
   let acceptsHistory: number[] = [];
   let cutoffIsReached: boolean;
 
-  const checkDate = (historyTime: number): number => {
-    return Date.now() - historyTime * 60000;
+  const checkDate = (historyTimeMinute: number): number => {
+    return Date.now() - historyTimeMinute * 60000;
   };
 
   const filterOldestHistory = (value: number): boolean => {
@@ -32,10 +59,10 @@ function createAdaptiveThrottlingHistory(
       const requests = requestsHistory.length;
       const accepts = acceptsHistory.length;
 
-      const p0 = Math.max(0, (requests - timesAsLargeAsAccepts * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
-      const p1 = Math.min(p0, upperLimiteToChanceOfRejectingNewRequest); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
+      const p0 = Math.max(0, (requests - k * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
+      const p1 = Math.min(p0, upperLimiteToReject); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
 
-      return (cutoffIsReached = p1 >= upperLimiteToChanceOfRejectingNewRequest);
+      return (cutoffIsReached = p1 >= upperLimiteToReject);
     },
     getCutoffIsReached() {
       return cutoffIsReached;
@@ -45,21 +72,17 @@ function createAdaptiveThrottlingHistory(
 
 /**
  *
- * @param {Number} historyTime - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
- * @param {Number} timesAsLargeAsAccepts - Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
- * @param {Number} upperLimiteToChanceOfRejectingNewRequest - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
+ * @param {Number} AdaptiveThrottlingOptions.historyTimeMinute - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+ * @param {Number} AdaptiveThrottlingOptions.k - Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
+ * @param {Number} AdaptiveThrottlingOptions.upperLimiteToReject - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
  * @returns
  */
-export const createAdaptiveThrottling = (
-  historyTime = 2,
-  timesAsLargeAsAccepts = 2,
-  upperLimiteToChanceOfRejectingNewRequest = 0.9,
-) => {
-  const adaptiveThrottling = createAdaptiveThrottlingHistory(
-    historyTime,
-    timesAsLargeAsAccepts,
-    upperLimiteToChanceOfRejectingNewRequest,
-  );
+export const AdaptiveThrottling = ({
+  historyTimeMinute = HISTORY_TIME_MINUTE,
+  k = K,
+  upperLimiteToReject = UPPER_LIMITE_TO_REJECT,
+}: AdaptiveThrottlingOptions = defaultOptions) => {
+  const adaptiveThrottling = createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReject);
 
   return {
     getCutoffIsReached() {
@@ -68,7 +91,7 @@ export const createAdaptiveThrottling = (
     async execute(func: any) {
       if (adaptiveThrottling.getCutoffIsReached()) {
         adaptiveThrottling.refresh();
-        throw new Error('Out of quota');
+        throw new ThrottledEception();
       }
 
       adaptiveThrottling.addRequests();
@@ -83,4 +106,24 @@ export const createAdaptiveThrottling = (
       }
     },
   };
+};
+
+/**
+ *
+ * @param {Number} historyTimeMinute - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+ * @param {Number} timesAsLargeAsAccepts- Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
+ * @param {Number} upperLimiteToChanceOfRejectingNewRequest - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
+ * @returns
+ * @deprecated prefer AdaptiveThrottling
+ */
+export const createAdaptiveThrottling = (
+  historyTimeMinute = 2,
+  timesAsLargeAsAccepts = 2,
+  upperLimiteToChanceOfRejectingNewRequest = 0.9,
+) => {
+  return AdaptiveThrottling({
+    historyTimeMinute,
+    k: timesAsLargeAsAccepts,
+    upperLimiteToReject: upperLimiteToChanceOfRejectingNewRequest,
+  });
 };
