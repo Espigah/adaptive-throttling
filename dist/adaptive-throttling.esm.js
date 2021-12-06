@@ -34,6 +34,97 @@ function _asyncToGenerator(fn) {
   };
 }
 
+function _inheritsLoose(subClass, superClass) {
+  subClass.prototype = Object.create(superClass.prototype);
+  subClass.prototype.constructor = subClass;
+
+  _setPrototypeOf(subClass, superClass);
+}
+
+function _getPrototypeOf(o) {
+  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+function _isNativeReflectConstruct() {
+  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+  if (Reflect.construct.sham) return false;
+  if (typeof Proxy === "function") return true;
+
+  try {
+    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function _construct(Parent, args, Class) {
+  if (_isNativeReflectConstruct()) {
+    _construct = Reflect.construct;
+  } else {
+    _construct = function _construct(Parent, args, Class) {
+      var a = [null];
+      a.push.apply(a, args);
+      var Constructor = Function.bind.apply(Parent, a);
+      var instance = new Constructor();
+      if (Class) _setPrototypeOf(instance, Class.prototype);
+      return instance;
+    };
+  }
+
+  return _construct.apply(null, arguments);
+}
+
+function _isNativeFunction(fn) {
+  return Function.toString.call(fn).indexOf("[native code]") !== -1;
+}
+
+function _wrapNativeSuper(Class) {
+  var _cache = typeof Map === "function" ? new Map() : undefined;
+
+  _wrapNativeSuper = function _wrapNativeSuper(Class) {
+    if (Class === null || !_isNativeFunction(Class)) return Class;
+
+    if (typeof Class !== "function") {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    if (typeof _cache !== "undefined") {
+      if (_cache.has(Class)) return _cache.get(Class);
+
+      _cache.set(Class, Wrapper);
+    }
+
+    function Wrapper() {
+      return _construct(Class, arguments, _getPrototypeOf(this).constructor);
+    }
+
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    return _setPrototypeOf(Wrapper, Class);
+  };
+
+  return _wrapNativeSuper(Class);
+}
+
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -794,25 +885,59 @@ try {
 }
 });
 
-function createAdaptiveThrottlingHistory(historyTimeMinute, timesAsLargeAsAccepts, upperLimiteToChanceOfRejectingNewRequest) {
+var ThrottledEception = /*#__PURE__*/function (_Error) {
+  _inheritsLoose(ThrottledEception, _Error);
+
+  function ThrottledEception(message) {
+    var _this;
+
+    if (message === void 0) {
+      message = 'The request was throttled.';
+    }
+
+    _this = _Error.call(this, message) || this;
+    _this.message = message;
+    _this.name = 'ThrottledEception';
+    _this.stack = new Error().stack;
+    return _this;
+  }
+
+  return ThrottledEception;
+}( /*#__PURE__*/_wrapNativeSuper(Error));
+
+// Higher value is less agressive, 2 is recommended
+
+var K = 2; // Determines how many seconds wide the requestWindow is.
+// Default is 120 seconds i.e rejection probability is based on how well the backend has been performing in the last 2 minutes
+
+var HISTORY_TIME_MINUTE = 120; // Determines how often requestsMap is cleaned (delete old keys), default 60 seconds
+
+var UPPER_LIMITE_TO_REJECT = 60;
+var defaultOptions = {
+  historyTimeMinute: HISTORY_TIME_MINUTE,
+  k: K,
+  upperLimiteToReject: UPPER_LIMITE_TO_REJECT
+};
+
+function createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReject) {
   if (historyTimeMinute === void 0) {
-    historyTimeMinute = 2;
+    historyTimeMinute = HISTORY_TIME_MINUTE;
   }
 
-  if (timesAsLargeAsAccepts === void 0) {
-    timesAsLargeAsAccepts = 2;
+  if (k === void 0) {
+    k = K;
   }
 
-  if (upperLimiteToChanceOfRejectingNewRequest === void 0) {
-    upperLimiteToChanceOfRejectingNewRequest = 0.9;
+  if (upperLimiteToReject === void 0) {
+    upperLimiteToReject = UPPER_LIMITE_TO_REJECT;
   }
 
   var requestsHistory = [];
   var acceptsHistory = [];
   var cutoffIsReached;
 
-  var checkDate = function checkDate(historyTime) {
-    return Date.now() - historyTime * 60000;
+  var checkDate = function checkDate(historyTimeMinute) {
+    return Date.now() - historyTimeMinute * 60000;
   };
 
   var filterOldestHistory = function filterOldestHistory(value) {
@@ -834,11 +959,11 @@ function createAdaptiveThrottlingHistory(historyTimeMinute, timesAsLargeAsAccept
       acceptsHistory = acceptsHistory.filter(filterOldestHistory);
       var requests = requestsHistory.length;
       var accepts = acceptsHistory.length;
-      var p0 = Math.max(0, (requests - timesAsLargeAsAccepts * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
+      var p0 = Math.max(0, (requests - k * accepts) / (requests + 1)); // https://sre.google/sre-book/handling-overload/#eq2101
 
-      var p1 = Math.min(p0, upperLimiteToChanceOfRejectingNewRequest); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
+      var p1 = Math.min(p0, upperLimiteToReject); // https://rafaelcapucho.github.io/2016/10/enhance-the-quality-of-your-api-calls-with-client-side-throttling/
 
-      return cutoffIsReached = p1 >= upperLimiteToChanceOfRejectingNewRequest;
+      return cutoffIsReached = p1 >= upperLimiteToReject;
     },
     getCutoffIsReached: function getCutoffIsReached() {
       return cutoffIsReached;
@@ -847,27 +972,23 @@ function createAdaptiveThrottlingHistory(historyTimeMinute, timesAsLargeAsAccept
 }
 /**
  *
- * @param {Number} historyTime - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
- * @param {Number} timesAsLargeAsAccepts - Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
- * @param {Number} upperLimiteToChanceOfRejectingNewRequest - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
+ * @param {Number} AdaptiveThrottlingOptions.historyTimeMinute - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+ * @param {Number} AdaptiveThrottlingOptions.k - Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
+ * @param {Number} AdaptiveThrottlingOptions.upperLimiteToReject - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
  * @returns
  */
 
 
-var createAdaptiveThrottling = function createAdaptiveThrottling(historyTime, timesAsLargeAsAccepts, upperLimiteToChanceOfRejectingNewRequest) {
-  if (historyTime === void 0) {
-    historyTime = 2;
-  }
+var AdaptiveThrottling = function AdaptiveThrottling(_temp) {
+  var _ref = _temp === void 0 ? defaultOptions : _temp,
+      _ref$historyTimeMinut = _ref.historyTimeMinute,
+      historyTimeMinute = _ref$historyTimeMinut === void 0 ? HISTORY_TIME_MINUTE : _ref$historyTimeMinut,
+      _ref$k = _ref.k,
+      k = _ref$k === void 0 ? K : _ref$k,
+      _ref$upperLimiteToRej = _ref.upperLimiteToReject,
+      upperLimiteToReject = _ref$upperLimiteToRej === void 0 ? UPPER_LIMITE_TO_REJECT : _ref$upperLimiteToRej;
 
-  if (timesAsLargeAsAccepts === void 0) {
-    timesAsLargeAsAccepts = 2;
-  }
-
-  if (upperLimiteToChanceOfRejectingNewRequest === void 0) {
-    upperLimiteToChanceOfRejectingNewRequest = 0.9;
-  }
-
-  var adaptiveThrottling = createAdaptiveThrottlingHistory(historyTime, timesAsLargeAsAccepts, upperLimiteToChanceOfRejectingNewRequest);
+  var adaptiveThrottling = createAdaptiveThrottlingHistory(historyTimeMinute, k, upperLimiteToReject);
   return {
     getCutoffIsReached: function getCutoffIsReached() {
       return adaptiveThrottling.getCutoffIsReached();
@@ -885,7 +1006,7 @@ var createAdaptiveThrottling = function createAdaptiveThrottling(historyTime, ti
                 }
 
                 adaptiveThrottling.refresh();
-                throw new Error('Out of quota');
+                throw new ThrottledEception();
 
               case 3:
                 adaptiveThrottling.addRequests();
@@ -914,6 +1035,34 @@ var createAdaptiveThrottling = function createAdaptiveThrottling(historyTime, ti
     }
   };
 };
+/**
+ *
+ * @param {Number} historyTimeMinute - Each client task keeps the following information for the last N minutes of its history. In case of "Out of quota" means time to wait for server recovery.
+ * @param {Number} timesAsLargeAsAccepts- Clients can continue to issue requests to the backend until requests is K times as large as accepts.  Google services and they suggest K = 2
+ * @param {Number} upperLimiteToChanceOfRejectingNewRequest - if the server goes down for more than 2 minutes, the P0 value will stand in 1, rejecting locally every new request to the server, so the client app won't be able to set up a new conection. As the result of it, the client app will never have another request reaching the server. 0.9 allowing the client to recover even in that worst scenario, when the service is down more than 2 minutes.
+ * @returns
+ * @deprecated prefer AdaptiveThrottling
+ */
 
-export { createAdaptiveThrottling };
+var createAdaptiveThrottling = function createAdaptiveThrottling(historyTimeMinute, timesAsLargeAsAccepts, upperLimiteToChanceOfRejectingNewRequest) {
+  if (historyTimeMinute === void 0) {
+    historyTimeMinute = 2;
+  }
+
+  if (timesAsLargeAsAccepts === void 0) {
+    timesAsLargeAsAccepts = 2;
+  }
+
+  if (upperLimiteToChanceOfRejectingNewRequest === void 0) {
+    upperLimiteToChanceOfRejectingNewRequest = 0.9;
+  }
+
+  return AdaptiveThrottling({
+    historyTimeMinute: historyTimeMinute,
+    k: timesAsLargeAsAccepts,
+    upperLimiteToReject: upperLimiteToChanceOfRejectingNewRequest
+  });
+};
+
+export { AdaptiveThrottling, createAdaptiveThrottling };
 //# sourceMappingURL=adaptive-throttling.esm.js.map
