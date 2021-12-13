@@ -46,6 +46,7 @@ describe('Adaptive Throttling', () => {
       await adaptiveThrottling.execute(success);
     };
 
+    expect(adaptiveThrottling.requestRejectionProbability).toEqual(0.8);
     await expect(action()).rejects.toThrow('The request was throttled.');
   });
 });

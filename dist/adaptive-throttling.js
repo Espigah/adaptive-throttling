@@ -1035,7 +1035,12 @@ var AdaptiveThrottling = function AdaptiveThrottling(_temp) {
           }
         }, _callee, null, [[4, 13]]);
       }))();
+    },
+
+    get requestRejectionProbability() {
+      return requestRejectionProbability;
     }
+
   };
 };
 /**
@@ -1068,4 +1073,4 @@ var createAdaptiveThrottling = function createAdaptiveThrottling(historyTimeMinu
 };
 
 export { AdaptiveThrottling, createAdaptiveThrottling };
-//# sourceMappingURL=adaptive-throttling.esm.js.map
+//# sourceMappingURL=adaptive-throttling.js.map

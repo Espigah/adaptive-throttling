@@ -12,6 +12,7 @@ interface AdaptiveThrottlingOptions {
  */
 export declare const AdaptiveThrottling: ({ historyTimeMinute, k, upperLimiteToReject, }?: AdaptiveThrottlingOptions) => {
     execute(func: any): Promise<any>;
+    readonly requestRejectionProbability: number;
 };
 /**
  *
@@ -23,5 +24,6 @@ export declare const AdaptiveThrottling: ({ historyTimeMinute, k, upperLimiteToR
  */
 export declare const createAdaptiveThrottling: (historyTimeMinute?: number, timesAsLargeAsAccepts?: number, upperLimiteToChanceOfRejectingNewRequest?: number) => {
     execute(func: any): Promise<any>;
+    readonly requestRejectionProbability: number;
 };
 export {};

@@ -1039,7 +1039,12 @@ var AdaptiveThrottling = function AdaptiveThrottling(_temp) {
           }
         }, _callee, null, [[4, 13]]);
       }))();
+    },
+
+    get requestRejectionProbability() {
+      return requestRejectionProbability;
     }
+
   };
 };
 /**
