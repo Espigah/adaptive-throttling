@@ -110,6 +110,9 @@ export const AdaptiveThrottling = ({
         throw error;
       }
     },
+    get requestRejectionProbability() {
+      return requestRejectionProbability;
+    },
   };
 };
 
