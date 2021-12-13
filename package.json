@@ -5,10 +5,14 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "typings": "dist/index.d.ts",
+  "engines": {
+    "node": ">=10"
+  },
   "scripts": {
     "tsdx": "node_modules/.bin/tsdx",
     "test": "jest --config jestconfig.json",
     "build": "tsdx build",
+    "build:browser": "ENV_TYPE=browser tsdx build --target web --format umd --name index",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
@@ -51,15 +55,16 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.16.4",
     "@types/jest": "^27.0.3",
-    "@typescript-eslint/eslint-plugin": "^5.5.0",
-    "@typescript-eslint/parser": "^5.5.0",
-    "eslint": "^8.4.0",
-    "jest": "^27.4.3",
+    "@typescript-eslint/eslint-plugin": "^5.6.0",
+    "@typescript-eslint/parser": "^5.6.0",
+    "eslint": "^8.4.1",
+    "jest": "^27.4.4",
     "prettier": "^2.5.1",
-    "ts-jest": "^27.1.0",
-    "typescript": "^4.5.2",
     "size-limit": "^7.0.4",
-    "tsdx": "^0.14.1"
+    "ts-jest": "^27.1.1",
+    "tsdx": "^0.14.1",
+    "typescript": "^4.5.3",
+    "rollup-plugin-replace": "^2.2.0"
   },
   "files": [
     "dist"
